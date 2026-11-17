@@ -324,7 +324,7 @@ function addItem(p,id){
 }
 let lastModel=-1;
 function makePerson(day){
-  const app=makeApp();app.m=pick([0,1,2,3].filter(i=>i!==lastModel));lastModel=app.m;
+  const app=makeApp();app.m=pick([0,1,2,3,4,5].filter(i=>i!==lastModel));lastModel=app.m;
   const p={name:pick(SUR)+pick(GIV),num:`2${Math.floor(rnd()*10)}${String(Math.floor(rnd()*1e6)).padStart(6,'0')}`,birth:birth(),app,items:{},caseItems:[],impostor:false,hearingNote:false};
   for(const z in ZONES)p.items[z]=[];
   for(const id of ['analog','metalGlass','belt','hairpin','keys','coins','tissue','shoeDeco']) if(chance(ITEMS[id].p)) addItem(p,id);
@@ -720,7 +720,7 @@ function portrait(app,glasses){
 // ═════════ VRM 모델 (공개 샘플 아바타) ═════════
 // 모델 파일마다 배우 하나를 만들어 두고, 응시자가 바뀔 때 색(머리·눈·옷)과 소지품만 갈아입힌다.
 const VR={ok:false,actors:[]};
-const MODELS=['models/a.vrm','models/b.vrm','models/c.vrm','models/d.vrm'];
+const MODELS=['models/a.vrm','models/b.vrm','models/c.vrm','models/d.vrm','models/e.vrm','models/f.vrm'];
 const rc=new THREE.Raycaster();
 function hueMatrix(deg){const a=deg*PI/180,c=Math.cos(a),s=Math.sin(a);
   return[.213+c*.787-s*.213,.715-c*.715-s*.715,.072-c*.072+s*.928,.213-c*.213+s*.143,.715+c*.285+s*.140,.072-c*.072-s*.283,.213-c*.213-s*.787,.715-c*.715+s*.715,.072+c*.928+s*.072]}
@@ -741,7 +741,7 @@ function makeActor(vrm){
   vrm.scene.traverse(o=>{o.frustumCulled=false;if(!o.isMesh)return;meshes.push(o);
     if(/face/i.test(o.name)||/face/i.test((o.parent&&o.parent.name)||''))face.push(o);
     for(const m of[].concat(o.material)){if(seen.has(m))continue;seen.add(m);const n=m.name||'';
-      const cat=/HAIR|FaceBrow/i.test(n)?'hair':/EyeIris/i.test(n)?'eye':/CLOTH/i.test(n)?'cloth':null;if(!cat)continue;
+      const cat=/HAIR|FaceBrow/i.test(n)?'hair':/EyeIris|(^|_)eye$/i.test(n)?'eye':/CLOTH|wear|huku/i.test(n)?'cloth':null;if(!cat)continue;
       m.userData.base={map:m.map||null,shade:m.shadeMultiplyTexture||null,color:m.color?m.color.clone():null,shadeC:m.shadeColorFactor?m.shadeColorFactor.clone():null};mats[cat].push(m)}});
   const st={cur:{lhand:0,rhand:0},items:[],blink:2+rnd()*3,look:null,itemsDef:null,tex:new Map()};
   const refs={hands:{lhand:{turn:0},rhand:{turn:0}},zoneMeshes:[],zc:{}};
@@ -759,7 +759,10 @@ function makeActor(vrm){
   const A={};
   function measure(){reset();
     meshes.forEach(m=>{if(m.isSkinnedMesh){m.computeBoundingBox();m.computeBoundingSphere()}});
-    const head=P('head'),eL=P('leftEye'),eR=P('rightEye'),hips=P('hips'),neck=P('neck');
+    if(!face.length)meshes.forEach(m=>face.push(m));
+    const head=P('head'),hips=P('hips'),neck=P('neck');let eL,eR;
+    if(rb('leftEye')&&rb('rightEye')){eL=P('leftEye');eR=P('rightEye')}
+    else{const top=hit(head.x,head.y+.5,head.z,0,-1,0),ey=head.y+((top?top.y:head.y+.16)-head.y)*.4;eL=new V3(.032,ey,head.z+.05);eR=new V3(-.032,ey,head.z+.05)}
     A.eyeY=(eL.y+eR.y)/2;A.eyeX=Math.max(.032,Math.abs(eL.x-eR.x)/2);A.height=head.y+.14;
     const f=hit(0,A.eyeY,1,0,0,-1,face);A.faceZ=f?f.z:eL.z+.03;
     const fe=hit(A.eyeX,A.eyeY,1,0,0,-1,face);A.eyeZ=fe?fe.z:A.faceZ-.01;
@@ -1245,7 +1248,7 @@ modal(`<div class="eyebrow">수능 당일 · 제12시험지구 정문</div><h1>�
 <p>응시자의 몸을 눌러 <b>확대</b>하고, 드래그해서 <b>돌려 보고</b>, 도구로 조사한 뒤 <b>입실 허가</b> 또는 <b>부정행위 적발</b>을 고르세요. 금속탐지기는 벨트와 안경에도 울립니다.</p>
 <div class="pointgrid"><span>부정행위자 적발</span><span>+100</span><span>정상 응시자 입실</span><span>+50</span><span>무고한 응시자 퇴실</span><span>−150</span><span>부정행위자 통과</span><span>−100</span><span>마감 시간까지 미처리</span><span>−30</span></div>
 <p style="font-size:12px;color:var(--muted)">단축키: 1 육안 · 2 금속탐지 · 3 정밀수색 · 4 필통 · 5 명단 · 6 전파 · 7 질문 · Space·Esc·우클릭·빈 곳 클릭 = 전체 보기</p>
-<p style="font-size:11px;color:var(--muted)">캐릭터 모델: VRoid AvatarSample A·B·C (VRoid Project), VRM1 Constraint Twist Sample (© pixiv Inc.)</p>`,'근무 시작',briefing);
+<p style="font-size:11px;color:var(--muted)">캐릭터 모델: VRoid AvatarSample A·B·C (VRoid Project), VRM1 Constraint Twist Sample (© pixiv Inc.), Seed-san (© VirtualCast, Inc., VRM Public License 1.0), 니코니 입체짱 (©dwango, inc.)</p>`,'근무 시작',briefing);
 {const go=$('#go');go.disabled=true;go.textContent='캐릭터 모델 불러오는 중 0%';
  loadVRM(pc=>{go.textContent=`캐릭터 모델 불러오는 중 ${pc}%`}).then(()=>{
    const ex=person;scene.remove(ex);disposeTree(ex);const a=VR.actors[0];a.dress({hairHue:0,eyeHue:0,clothHue:0,mole:0,glasses:null},null);a.root.scale.setScalar(1.66/a.A.height);person=a.root;scene.add(person)

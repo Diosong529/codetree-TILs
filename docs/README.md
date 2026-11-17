@@ -9,7 +9,7 @@
 |---|---|
 | `index.html` | 게임 본체 |
 | `lib/` | three.js 0.160.0, three-vrm 3.1.0 (인터넷 CDN 없이 동작하도록 포함) |
-| `models/` | 캐릭터 VRM 모델 4개 (약 30MB) |
+| `models/` | 캐릭터 VRM 모델 6개 (약 45MB) |
 | `CREDITS.md` | 사용한 모델과 라이브러리의 출처·라이선스 |
 
 글꼴만 Google Fonts에서 받아옵니다. 인터넷이 없으면 기본 글꼴로 표시됩니다.
